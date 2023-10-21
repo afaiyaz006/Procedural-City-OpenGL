@@ -15,9 +15,13 @@ using namespace std;
 using namespace glm;
 vector<vector<double>> pos;
 vector<double> heights;
+//chunk count
+int chunk_count = 0;
+
 //Create the Camera
 Camera camera;
 //number of cubes
+
 int number_of_cubes = 100;
 
 // light related
@@ -85,6 +89,7 @@ void generatePositions() {
 	srand(time(NULL));
 	pos.clear();
 	for (int i = 0; i < number_of_cubes; i++) {
+		
 		double posX = rand() % 20;
 		double posZ = rand() % 20;
 		pos.push_back({ posX,posZ });
@@ -199,6 +204,9 @@ void KeyboardFunc(unsigned char c, int x, int y) {
 		break;
 	case 'r':
 		camera.SetLookAt(glm::vec3(0, 0, 0));
+		break;
+	case 'h':
+		chunk_count += 1;
 		break;
 	case 'x':
 	case 27:
@@ -615,7 +623,7 @@ void drawWindTurbine() {
 	
 	
 }
-void proceduralGenerate() {
+void proceduralGenerate(bool turbine=true) {
 
 	for (int i = 0; i < number_of_cubes; i++) {
 		glPushMatrix();
@@ -629,16 +637,23 @@ void proceduralGenerate() {
 		glPopMatrix();
 
 	}
-	for (int i = 0; i < 5; i++) {
-		glPushMatrix();
-		glScalef(0.3, 0.3, 0.3);
-		glTranslatef(39, 0, 5+5*i);
-		drawWindTurbine();
-		glPopMatrix();
+	if (turbine) {
+		for (int i = 0; i < 5; i++) {
+			glPushMatrix();
+			glScalef(0.3, 0.3, 0.3);
+			glTranslatef(39, 0, 5 + 5 * i);
+			drawWindTurbine();
+			glPopMatrix();
+		}
 	}
 	
+	
 }
-
+void generate_chunk() {
+	
+	drawGround();
+	
+}
 
 
 
@@ -667,7 +682,10 @@ void DisplayFunc() {
 	
 	
 	///eikhane aktasi
+	
 
+
+	//root chunk
 	glPushMatrix();
 	glScalef(10, 0.5, 10);
 	glTranslatef(0.0f, -1.0f, 0.0f);
@@ -675,17 +693,16 @@ void DisplayFunc() {
 	glPopMatrix();
 	
 	proceduralGenerate();
+	
 	glScalef(10, 0.5, 10);
-	
-	
 	glTranslatef(1.0f, -1.0f, 0.0f);
+	
 	glPushMatrix();
 	drawGround();
 	glPopMatrix();
 	
 	
 	glPushMatrix();
-	
 	drawValley(glm::vec3(0.086, 0.98, 0.176),glm::vec3(0.086, 0.98, 0.176));
 	if (shcpt)
 	{
@@ -699,7 +716,19 @@ void DisplayFunc() {
 		
 	}
 	
+	glTranslatef(-2, 0, -2);
+	for (int chunksX = 1; chunksX < chunk_count; chunksX++) {
+		for (int chunksY = 1; chunksY < chunk_count; chunksY++) {
+			glPushMatrix();
+			glTranslatef(chunksX, 0, chunksY);
+			generate_chunk();
+			glScalef(0.1, 2.0, 0.1);
+			glTranslatef(0, 0.5, 0);
+			proceduralGenerate(false);
+			glPopMatrix();
+		}
 
+	}
 	
 	glutSwapBuffers();
 }
