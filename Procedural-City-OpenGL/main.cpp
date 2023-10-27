@@ -85,7 +85,7 @@ void ReshapeFunc(int w, int h) {
 	camera.SetViewport(0, 0, window.size.x, window.size.y);
 }
 void generatePositions() {
-	// calculate shits
+	// calculate things
 	srand(time(NULL));
 	pos.clear();
 	for (int i = 0; i < number_of_cubes; i++) {
@@ -205,8 +205,9 @@ void KeyboardFunc(unsigned char c, int x, int y) {
 	case 'r':
 		camera.SetLookAt(glm::vec3(0, 0, 0));
 		break;
-	case 'h':
+	case 'p':
 		chunk_count += 1;
+		//std::wcout << chunk_count << '\n';
 		break;
 	case 'x':
 	case 27:
@@ -652,6 +653,10 @@ void proceduralGenerate(bool turbine=true) {
 void generate_chunk() {
 	
 	drawGround();
+	glScalef(0.1, 2.0, 0.1);
+	glTranslatef(0, 0.5, 0);
+	proceduralGenerate(false);
+	
 	
 }
 
@@ -716,16 +721,18 @@ void DisplayFunc() {
 		
 	}
 	
-	glTranslatef(-2, 0, -2);
+	glTranslatef(-3, 0, -2);
+	
 	for (int chunksX = 1; chunksX < chunk_count; chunksX++) {
 		for (int chunksY = 1; chunksY < chunk_count; chunksY++) {
-			glPushMatrix();
-			glTranslatef(chunksX, 0, chunksY);
-			generate_chunk();
-			glScalef(0.1, 2.0, 0.1);
-			glTranslatef(0, 0.5, 0);
-			proceduralGenerate(false);
-			glPopMatrix();
+				glPushMatrix();
+				glTranslatef(chunksX, 0, chunksY);
+				generate_chunk();
+
+				glPopMatrix();
+			
+			
+			
 		}
 
 	}
@@ -789,6 +796,10 @@ int main(int argc, char* argv[]) {
 	std::cout << "Press r to reset camera \n";
 
 	std::cout << "press t to turn on wind turbine\n";
+
+	std::cout << "press p to generate chunks.\n";
+
+	
 	//koshto hoccche!!!
 	glutMainLoop();
 	return 0;

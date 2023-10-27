@@ -8,8 +8,8 @@ Camera::Camera() {
 	field_of_view = 45;
 	camera_position_delta = glm::vec3(0, 0, 0);
 	camera_scale = .5f;
-	max_pitch_rate = 5;
-	max_heading_rate = 5;
+	max_pitch_rate = 1;
+	max_heading_rate = 1;
 	move_camera = false;
 }
 Camera::~Camera() {
