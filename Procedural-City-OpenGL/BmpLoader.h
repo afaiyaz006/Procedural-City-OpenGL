@@ -1,6 +1,9 @@
+
 #ifndef BMPLOADER_H
 #define BMPLOADER_H
-#include<windows.h>
+
+#include<Windows.h>
+
 
 class BmpLoader
 {

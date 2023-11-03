@@ -13,10 +13,21 @@ ID:19201006
 #include "BmpLoader.h"
 using namespace std;
 using namespace glm;
+//building related
 vector<vector<double>> pos;
 vector<double> heights;
 //chunk count
 int chunk_count = 0;
+
+//mountain related
+//mountain count
+int mountain_count = 5;
+vector<vector<double>> mountainPos;
+vector<double> mountain_heights;
+
+//city naki valley
+int wheel[] = {0,1,1};
+int city = 1;
 
 //Create the Camera
 Camera camera;
@@ -31,18 +42,23 @@ bool isSpecular = true;
 bool isLight = true;
 unsigned int ID = 0;
 
+//emission related
+bool emitlight = true;
+
 // beizier curve surface related
 int wired = 0;
 int shcpt = 1;
-int animat = 0;
+int animat = 1;
 const int L = 8;
 const int dgre = 3;
 int ncpt = L + 1;
 int clikd = 0;
 const int nt = 40;				//number of slices along x-direction
 const int ntheta = 20;
+
 bool turnonTurbine = false;
 int rotateTurbine = 0;
+
 
 //eida  
 GLfloat ctrlpoints[L + 1][3] =
@@ -88,16 +104,29 @@ void generatePositions() {
 	// calculate things
 	srand(time(NULL));
 	pos.clear();
+	mountainPos.clear();
+	heights.clear();
+	mountain_heights.clear();
 	for (int i = 0; i < number_of_cubes; i++) {
 		
 		double posX = rand() % 20;
 		double posZ = rand() % 20;
+		double mPosX = rand() % 100;
+		double mPosZ = rand() % 100;
 		pos.push_back({ posX,posZ });
+		mountainPos.push_back({ mPosX/100,mPosZ/100 });
 	}
 	double customheights[] = { 0.3,0.2,0.5,1.0,2.0,3.0 };
 	for (int i = 0; i < number_of_cubes; i++) {
 		heights.push_back(customheights[rand() % 6]);
 	}
+	double mountainheights[] = { 0.35,0.3,0.32,0.23,0.25,0.21 };
+	for (int i = 0; i < number_of_cubes; i++) {
+		mountain_heights.push_back(mountainheights[rand() % 6]);
+	}
+	for (int i = 0; i < 3; i++) { wheel[i]=rand()%3; }//kokhono sohor kokhono upottoka
+
+	
 
 }
 void LoadTexture(const char* filename)
@@ -165,6 +194,12 @@ void KeyboardFunc(unsigned char c, int x, int y) {
 		else {
 			isLight = true;
 		}
+		if (emitlight) {
+			emitlight = false;
+		}
+		else {
+			emitlight = true;
+		}
 		light();
 		break;
 	case 'y':
@@ -203,11 +238,35 @@ void KeyboardFunc(unsigned char c, int x, int y) {
 		}
 		break;
 	case 'r':
+		camera.SetLookAt(glm::vec3(0, 0, -1));
 		camera.SetLookAt(glm::vec3(0, 0, 0));
 		break;
-	case 'p':
+	case '=':
 		chunk_count += 1;
 		//std::wcout << chunk_count << '\n';
+		break;
+	case '-':
+		if (chunk_count < 0) {
+			chunk_count = 1;
+		}
+		chunk_count -= 1;
+		break;
+	case 'f':
+		if (wired) {
+			wired = false;
+
+		}
+		else {
+			wired = true;
+		}
+		break;
+	case 'h':
+		if (shcpt) {
+			shcpt = false;
+		}
+		else {
+			shcpt = true;
+		}
 		break;
 	case 'x':
 	case 27:
@@ -252,12 +311,12 @@ static GLubyte quadIndices[6][4] =
 };
 
 void light() {
-	
-		GLfloat no_light[] = { 0.0, 0.0, 0.0, 1.0 };
+		
+		GLfloat no_light[] = { 0.0, 0.0, 0.0, 0.0 };
 		GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
 		GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
 		GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-		GLfloat light_position[] = { 0, 5, 0, 1.0 };
+		GLfloat light_position[] = { 5, 5,0, 1.0 };
 		if (isLight) {
 			glEnable(GL_LIGHTING);
 			glEnable(GL_NORMALIZE);
@@ -271,10 +330,12 @@ void light() {
 
 			if (isSpecular == true) { glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular); }
 			else { glLightfv(GL_LIGHT0, GL_SPECULAR, no_light); }
-
+			glLoadIdentity();
 			glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 		}
+
 		else {
+			//glDisable(GL_LIGHTING);
 			glDisable(GL_LIGHT0);
 		}
 	
@@ -352,7 +413,7 @@ void showControlPoints()
 	glEnd();
 }
 
-void drawValley(glm::vec3 ambientColorVector = glm::vec3(0.25, 0.1, 0.1),
+void drawMountain(glm::vec3 ambientColorVector = glm::vec3(0.25, 0.1, 0.1),
 	glm::vec3 diffColorVector = glm::vec3(0.5, 0.2, 0.2))
 {
 
@@ -458,7 +519,8 @@ void drawValley(glm::vec3 ambientColorVector = glm::vec3(0.25, 0.1, 0.1),
 void drawCubeWithNormal(
 	glm::vec3 ambientColorVector = glm::vec3(0.25, 0.1, 0.1),
 	glm::vec3 diffColorVector = glm::vec3(0.5, 0.2, 0.2),
-	bool texture=false
+	bool texture=false,
+	bool emission=false
 )
 {
 	GLfloat no_mat[] = { 0.0, 0.0, 0.0, 1.0 };
@@ -466,14 +528,21 @@ void drawCubeWithNormal(
 	GLfloat mat_diffuse[] = { diffColorVector.x,diffColorVector.y,diffColorVector.z, 1.0 };
 	
 	GLfloat mat_specular[] = { 1.0,1.0,1.0, 1.0 };
+	GLfloat mat_emission[] = { 1.0,1.0,1.0,1.0 };
 	GLfloat mat_shininess = 500.0f;
 
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_ambient);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diffuse);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, no_mat);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, no_mat);
+	
+	if (emission) {
+		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, mat_emission);
+	}
+	else {
+		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, no_mat);
 
+	}
 
 	glBegin(GL_QUADS);
 
@@ -541,7 +610,8 @@ void drawCube(
 }
 
 
-void drawGround(glm::vec4 ground_color = glm::vec4(0.341, 1, 0.408, 1)) {
+void drawGround(glm::vec3 ambientColorVector = glm::vec3(0.086, 0.98, 0.176),
+				glm::vec3 diffColorVector = glm::vec3(0.835, 1, 0.835)) {
 	/*drawCube(
 		glm::vec4(ground_color.x,ground_color.y,ground_color.z,ground_color.w),
 		glm::vec4(ground_color.x, ground_color.y, ground_color.z, ground_color.w),
@@ -551,11 +621,10 @@ void drawGround(glm::vec4 ground_color = glm::vec4(0.341, 1, 0.408, 1)) {
 		glm::vec4(ground_color.x, ground_color.y, ground_color.z, ground_color.w)
 
 	);*/
-	glm::vec3 ambientColorVector = glm::vec3(0.086, 0.98, 0.176);
-	glm::vec3 diffColorVector = glm::vec3(0.835, 1, 0.835);
 	drawCubeWithNormal(ambientColorVector,diffColorVector,false);
 
 }
+
 
 void drawBase(glm::vec4 base_color = glm::vec4(0.702, 0.702, 0.702, 1)) {
 	
@@ -588,6 +657,7 @@ void gridGenerate(double x, double y, double z) {
 			glTranslatef(x + dx,0, z);
 			x += dx;
 			drawBase();
+		
 			glPopMatrix();
 
 		}
@@ -601,6 +671,9 @@ void drawBuilding() {
 	glScalef(0.5, 10, 0.5);
 	//drawCube();
 	drawCubeWithNormal(glm::vec3(1.0,1.0,1.0),glm::vec3(0.5, 0.5, 0.5),true);
+	glScalef(0.1, 0.05, 0.1);
+	glTranslatef(1.0, 0.5, 0.0);
+	drawCubeWithNormal(glm::vec3(1.0, 1.0, 1.0), glm::vec3(1.0, 1.0, 1.0), false, true);
 }
 void drawWindTurbine() {
 	glPushMatrix();
@@ -624,25 +697,49 @@ void drawWindTurbine() {
 	
 	
 }
-void proceduralGenerate(bool turbine=true) {
+void proceduralGenerate(bool turbine=true,int city=1) {
+	if (city == 1) {
+		//draw city
+		for (int i = 0; i < number_of_cubes; i++) {
+			glPushMatrix();
+			glScalef(0.5, 0.05, 0.5);
+			glTranslatef(pos[i][0], 0, pos[i][1]);
 
-	for (int i = 0; i < number_of_cubes; i++) {
-		glPushMatrix();
-		glScalef(0.5, 0.05, 0.5);
-		glTranslatef(pos[i][0], 0, pos[i][1]);
+			drawBase();
+			glTranslatef(0.5 / 2, 0.05 / 2, 0.5 / 2);
+			glScalef(1, heights[i], 1);
+			drawBuilding();
+			glPopMatrix();
 
-		drawBase();
-		glTranslatef(0.5 / 2, 0.05 / 2, 0.5 / 2);
-		glScalef(1, heights[i], 1);
-		drawBuilding();
-		glPopMatrix();
-
+		}
 	}
-	if (turbine) {
+	else if(city==0) {
+		//draw valley
+		for (int i = 0; i < mountain_count; i++) {
+			glPushMatrix();
+			glScalef(3.0f, mountain_heights[i%6], 5.0f);
+			glTranslatef(mountainPos[i%6][0], -1.0f, mountainPos[i % 6][1]);
+		
+			drawMountain(glm::vec3(0.086, 0.98, 0.176), glm::vec3(0.086, 0.98, 0.176));
+			glPopMatrix();
+		}
+	}
+	else if (city == 2) {
+		//draw valley
+		for (int i = 0; i < mountain_count; i++) {
+			glPushMatrix();
+			glScalef(3.0f, mountain_heights[i % 6], 5.0f);
+			glTranslatef(mountainPos[i % 6][0], -1.0f, mountainPos[i % 6][1]);
+
+			drawMountain(glm::vec3(0.788, 0.749, 0.396), glm::vec3(0.878, 0.839, 0.459));
+			glPopMatrix();
+		}
+	}
+	if (turbine && city!=1) {
 		for (int i = 0; i < 5; i++) {
 			glPushMatrix();
 			glScalef(0.3, 0.3, 0.3);
-			glTranslatef(39, 0, 5 + 5 * i);
+			glTranslatef(32.5, 0, 5 + 5 * i);
 			drawWindTurbine();
 			glPopMatrix();
 		}
@@ -650,12 +747,18 @@ void proceduralGenerate(bool turbine=true) {
 	
 	
 }
-void generate_chunk() {
-	
-	drawGround();
+void generate_chunk(int city=1) {
+	if (city == 2) {
+		
+		drawGround(glm::vec4(1, 0.918, 0.176, 0.812));
+	}
+	else {
+		drawGround();
+	}
 	glScalef(0.1, 2.0, 0.1);
 	glTranslatef(0, 0.5, 0);
-	proceduralGenerate(false);
+	
+	proceduralGenerate(true,city);
 	
 	
 }
@@ -708,7 +811,7 @@ void DisplayFunc() {
 	
 	
 	glPushMatrix();
-	drawValley(glm::vec3(0.086, 0.98, 0.176),glm::vec3(0.086, 0.98, 0.176));
+	drawMountain(glm::vec3(0.086, 0.98, 0.176),glm::vec3(0.086, 0.98, 0.176));
 	if (shcpt)
 	{
 
@@ -716,24 +819,24 @@ void DisplayFunc() {
 	}
 	glPopMatrix();
 	if (turnonTurbine) {
-		rotateTurbine += 1;
+		rotateTurbine += 10;
 		rotateTurbine = rotateTurbine % 360;
 		
 	}
 	
-	glTranslatef(-3, 0, -2);
-	
+	glTranslatef(-2, 0, -1); //intial vector--> (-3, 0 ,-2)
+	int counter = 0;
+
 	for (int chunksX = 1; chunksX < chunk_count; chunksX++) {
 		for (int chunksY = 1; chunksY < chunk_count; chunksY++) {
 				glPushMatrix();
+				city = wheel[counter % 3];
 				glTranslatef(chunksX, 0, chunksY);
-				generate_chunk();
-
+				if(counter!=0) generate_chunk(city);  ///prothom chunk ta bad dear jonno
 				glPopMatrix();
-			
-			
-			
+				counter += 1;	
 		}
+		
 
 	}
 	
@@ -797,9 +900,16 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "press t to turn on wind turbine\n";
 
-	std::cout << "press p to generate chunks.\n";
+	std::cout << "press = to generate chunks.\n";
 
-	
+	std::cout << "press - to reduce chunks.\n";
+
+	std::cout << "press f to toggle wire.\n";
+
+	std::cout << "press h to toggle beizier control points.\n";
+
+	std::cout << "Press g to generate new seed.";
+
 	//koshto hoccche!!!
 	glutMainLoop();
 	return 0;
