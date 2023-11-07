@@ -3,4 +3,4 @@ A minimalistic "procedurally generated" cityscape.My final lab project for CSE-4
 
 # Screenshot
 ![alt text](city_proc.png)
-
+![alt text](city_landscape.png)
